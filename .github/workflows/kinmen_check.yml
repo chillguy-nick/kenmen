@@ -1,0 +1,51 @@
+# .github/workflows/playwright_kinmen_check.yml
+
+name: Kinmen Website Playwright Check
+
+# 當程式碼推送到 main 或 develop 分支時觸發此工作流程
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # 允許手動觸發此工作流程
+
+jobs:
+  test_kinmen_website:
+    name: Test Kinmen Website Display
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 環境
+
+    steps:
+      - name: Checkout repository # 步驟 1: 拉取你的程式碼
+        uses: actions/checkout@v4
+
+      - name: Set up Python # 步驟 2: 設定 Python 環境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9' # 建議使用 3.8 或更高版本
+
+      - name: Install Python dependencies # 步驟 3: 安裝 Playwright、pytest 及其他 Python 依賴
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers # 步驟 4: 安裝 Playwright 瀏覽器核心
+        run: |
+          playwright install --with-deps chromium # 只安裝 chromium，如果需要其他瀏覽器，請添加
+
+      - name: Run Playwright test with Pytest # 步驟 5: 執行你的 Playwright 腳本
+        # 使用 pytest 運行測試，如果測試失敗，這一步會標記為失敗
+        run: |
+          pytest check_kinmen.py # 執行你的測試腳本
+        continue-on-error: true # 即使這裡失敗，也繼續執行後續步驟（為了上傳截圖）
+
+      - name: Upload error screenshot artifact # 步驟 6: 上傳錯誤截圖 (如果存在)
+        uses: actions/upload-artifact@v4
+        if: always() # 無論前一步驟成功或失敗，都嘗試執行此步驟
+        with:
+          name: kinmen-website-error-screenshot # 產物名稱
+          path: screenshot_error.png # 截圖檔案的路徑 (與你的 Python 腳本一致)
+          retention-days: 7 # 截圖保存天數，過期會自動刪除
+          # `if: failure()` 可以只在測試失敗時上傳，但 `always()` 更好，因為即使不是 pytest 導致的錯誤也可能產生截圖
