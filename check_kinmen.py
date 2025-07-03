@@ -15,29 +15,24 @@ def browser_page(playwright_browser):
 
 def test_kinmen_contact_info(browser_page: Page):
     page = browser_page
-    screenshot_path = "screenshot_error.png" # 設定截圖的路徑
+    screenshot_path = "screenshot_final.png" # 統一一個截圖檔名，或者區分成功/失敗
 
     try:
         page.goto(WEBSITE_URL)
         page.get_by_role("link", name="機關介紹").first.click()
-
-        # 執行你的檢查
         expect(page.locator("tbody")).to_contain_text("單位電話")
         print("Test passed: '單位電話' found in tbody.")
-
-    except AssertionError as e:
-        # 如果斷言失敗，截圖並重新拋出錯誤
-        print(f"Test failed: {e}")
+        # 如果測試成功，也在這裡截圖
         page.screenshot(path=screenshot_path)
+    except AssertionError as e:
+        print(f"Test failed: {e}")
+        page.screenshot(path=screenshot_path) # 失敗時截圖
         pytest.fail(f"Test failed and screenshot taken: {e}")
     except Exception as e:
-        # 其他任何錯誤，也截圖
         print(f"An unexpected error occurred: {e}")
-        page.screenshot(path=screenshot_path)
+        page.screenshot(path=screenshot_path) # 意外錯誤時截圖
         pytest.fail(f"Unexpected error and screenshot taken: {e}")
-
     finally:
-        # 即使成功，也可以考慮截圖，以便於確認正常顯示
-        # 如果你只想要失敗才截圖，可以將此行移到 except 區塊中
-        if not pytest.current_test_status == "passed": # 如果測試不是通過狀態
-             page.screenshot(path=screenshot_path) # 再確保截圖一次 (避免斷言外錯誤)
+        # 確保在任何情況下都嘗試截圖 (但要避免重複截圖)
+        # 更好的做法是，確保你的截圖邏輯在測試結果無論如何都執行到
+        pass # 在這個修改版中，try/except 已經處理了截圖
