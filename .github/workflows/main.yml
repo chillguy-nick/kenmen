@@ -1,0 +1,49 @@
+# .github/workflows/main.yml
+
+name: Playwright Website Check
+
+  # 當程式碼推送到 main 或 develop 分支時觸發此工作流程
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request: # 也可以在 Pull Request 時觸發
+    branches:
+      - main
+  workflow_dispatch: # 允許手動觸發此工作流程
+
+jobs:
+  test_website_display:
+    name: Check Website Display with Playwright
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 環境
+
+    steps:
+      - name: Checkout repository # 步驟 1: 拉取你的程式碼
+        uses: actions/checkout@v4
+
+      - name: Set up Python # 步驟 2: 設定 Python 環境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9' # 建議使用 3.8 或更高版本
+
+      - name: Install Python dependencies # 步驟 3: 安裝 Playwright 及其他 Python 依賴
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers # 步驟 4: 安裝 Playwright 瀏覽器核心
+        # Playwright 需要這些瀏覽器來執行測試
+        run: |
+          playwright install --with-deps
+
+      - name: Run Playwright test # 步驟 5: 執行你的 Playwright 腳本
+        run: |
+          python test.py # 執行你的測試腳本
+
+      - name: Upload screenshot artifact # 步驟 6: 如果測試失敗或需要除錯，上傳截圖
+        uses: actions/upload-artifact@v4
+        if: always() # 確保無論測試成功或失敗都會執行此步驟
+        with:
+          name: website-screenshot # 產物名稱
+          path: screenshot.png # 截圖檔案的路徑 (與你的 Python 腳本一致)
+          retention-days: 5 # 截圖保存天數，過期會自動刪除
